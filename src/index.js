@@ -29,7 +29,7 @@ app.post('/users', (request, response) => {
   // teste: autenticar se o usuário existe
   const auntenticarUsers = users.some((user) => user.username === username)
   if (auntenticarUsers) {
-    return response.status(400).send({ error: "User exists" })
+    return response.status(400).json({ error: "User exists" })
   }
 
   // criação do objeto
@@ -37,17 +37,17 @@ app.post('/users', (request, response) => {
     id: uuidv4(),
     name,
     username,
-    todo: []
+    todos: []
   }
   users.push(newUser)
 
-  return response.status(201).send(newUser)
+  return response.status(201).json(newUser)
 });
 
 // Retornar todo de um usuário. 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
   const { username } = request
-  return response.json(username.todo)
+  return response.json(username.todos)
 });
 
 // Criar todo: title e deadline passado pelo corpo
@@ -65,7 +65,7 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
     created_at: new Date()
   }
   // passando objeto todo para a lista do usuário
-  username.todo.push(newTodo)
+  username.todos.push(newTodo)
 
   response.status(201).json(newTodo)
 });
@@ -78,15 +78,15 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { username } = request
 
   // Busca pelo user.id === id 
-  const update = username.todo.findIndex((user) => user.id == id)
+  const update = username.todos.find((user) => user.id == id)
   // teste: verificar se o id do usuário existe
-  if(update === -1){
+  if(!update){
     return response.status(404).send({error: "ID not exists"})
   }
-  username.todo[update].title = title
-  username.todo[update].deadline = deadline
+  update.title = title
+  update.deadline = new Date(deadline)
 
-  return response.status(201).send()
+  return response.json(update)
 
 });
 
@@ -97,14 +97,14 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const { username } = request
 
   // busca o indice do todo e na chave done altera para true
-  const updateDoneTodo = username.todo.findIndex((userId) => userId.id === id)
+  const updateDoneTodo = username.todos.find((userId) => userId.id === id)
   // teste : verificar se o id do todo existe
-  if(updateDoneTodo === -1){
+  if(!updateDoneTodo){
     return response.status(404).json({error: "Todo not found"})
   }
-  username.todo[updateDoneTodo].done = true
+  updateDoneTodo.done = true
 
-  return response.status(201).send()
+  return response.json(updateDoneTodo)
 });
 
 // Deletar um usuário
@@ -114,13 +114,13 @@ app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { username } = request
 
   // teste : verifica se o todo existe
-  const deleteTodo = username.todo.some((userId) => userId.id === id)
+  const deleteTodo = username.todos.some((userId) => userId.id === id)
   if(!deleteTodo){
     return response.status(404).json({error: "Todo not found"})
   }
 
   // busca o id e exclui
-  username.todo = username.todo.filter((userId) => userId.id !== id)
+  username.todos = username.todos.filter((userId) => userId.id !== id)
 
   return response.status(204).send()
 });
